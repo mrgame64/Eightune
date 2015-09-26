@@ -10,9 +10,10 @@ typedef unsigned short int word;
 #include "wv_sine.h"
 #include "wv_sawtooth.h"
 #include "wv_noise.h"
-
 //DPCM waveform Table
 byte dpcm[240];
+
+byte* waveforms[] = {&square50, &square25, &square12, &triangle, &sine, &sawtooth, &noise, &dpcm};
 
 //Channels
 struct Channel {
@@ -20,6 +21,8 @@ struct Channel {
   byte* waveform;   //Waveform array pointer
   byte volume;      //5bits of volume (upper 3 bit don't count)
 } a, b, c ,d;
+
+Channel* chans[] = {&a, &b, &c, &d};
 
 
 //Zeroes the DPCM table
@@ -45,13 +48,7 @@ inline void writeData(byte addr, byte data) {
     Channel* chan;
     
     //Select the channel
-    //TODO: optimize with a table
-    switch(addr / 3) {
-      case 0: chan = &a; break;
-      case 1: chan = &b; break;
-      case 2: chan = &c; break;
-      case 3: chan = &d; break;
-    }
+    chan = chans[addr / 3];
     
     //Write to register
     switch(addr % 3) {
@@ -75,17 +72,7 @@ inline void writeData(byte addr, byte data) {
         chan->volume = 31 - (data >> 3);
         
         //Waveform
-        //TODO: optimize with a table
-        switch(data & 0x7) {
-          case 0: chan->waveform = &wv_square50; break;
-          case 1: chan->waveform = &wv_square25; break;
-          case 2: chan->waveform = &wv_square12; break;
-          case 3: chan->waveform = &wv_triangle; break;
-          case 4: chan->waveform = &wv_sine; break;
-          case 5: chan->waveform = &wv_sawtooth; break;
-          case 6: chan->waveform = &wv_noise; break;
-          case 7: chan->waveform = &dpcm; break;
-        }
+        chan->waveform = waveforms[data & 0x7];
         break;
       }
     }
