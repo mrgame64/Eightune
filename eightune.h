@@ -13,8 +13,6 @@ typedef unsigned short int word;
 //DPCM waveform Table
 byte dpcm[240];
 
-byte* waveforms[] = {&square50, &square25, &square12, &triangle, &sine, &sawtooth, &noise, &dpcm};
-
 //Channels
 struct Channel {
   word freq;        //16bit frequency register
@@ -22,12 +20,15 @@ struct Channel {
   byte volume;      //5bits of volume (upper 3 bit don't count)
 } a, b, c ,d;
 
-Channel* chans[] = {&a, &b, &c, &d};
+
+//Lookup tables
+const byte* waveforms[] = {&square50, &square25, &square12, &triangle, &sine, &sawtooth, &noise, &dpcm};
+const Channel* chans[] = {&a, &b, &c, &d};
 
 
 //Zeroes the DPCM table
 void resetDPCM() {
-  for(byte i=0; i<240; i++)
+  for(byte i = 0; i < 240; i++)
     dpcm[i] = 0;
 }
 
