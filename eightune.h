@@ -1,4 +1,6 @@
-#include <Arduino.h>
+//Data types
+typedef unsigned char byte;
+typedef unsigned short int word;
 
 //Waveforms 
 #include "wv_square50.h"
@@ -27,10 +29,7 @@ void resetDPCM() {
 }
 
 //Synthesizes and mixed the 4 channels
-byte synth() {
-  //TODO: faster timing
-  long t = micros();
-  
+byte synth(long t) {
   //TODO: make compatible with DPCM
   byte aout = ( a.waveform[ (t * a.freq) % 256 ] ) >> (a.volume + 2);   //the +2 is a division by 4, to mix the channels
   byte bout = ( b.waveform[ (t * a.freq) % 256 ] ) >> (b.volume + 2); 
