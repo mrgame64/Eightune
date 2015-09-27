@@ -1,6 +1,6 @@
 //Data types
-typedef unsigned char byte;
-typedef unsigned short int word;
+typedef unsigned char u8;      // unsigned u8 (8bit)
+typedef unsigned short int u16;// unsigned u16 (16bit)
 
 //Waveforms 
 #include "wv_square50.h"
@@ -11,39 +11,36 @@ typedef unsigned short int word;
 #include "wv_sawtooth.h"
 #include "wv_noise.h"
 //DPCM waveform Table
-byte dpcm[240];
+u8 dpcm[240];
 
 //Channels
 struct Channel {
-  word freq;        //16bit frequency register
-  byte* waveform;   //Waveform array pointer
-  byte volume;      //5bits of volume (upper 3 bit don't count)
+  u16 freq;        //16bit frequency register
+  const u8* waveform;   //Waveform array pointer
+  u8 volume;      //5bits of volume (upper 3 bit don't count)
 } a, b, c ,d;
 
-
-//Lookup tables
-const byte* waveforms[] = {&square50, &square25, &square12, &triangle, &sine, &sawtooth, &noise, &dpcm};
-const Channel* chans[] = {&a, &b, &c, &d};
+Channel* chans[] = {&a, &b, &c, &d};
 
 
 //Zeroes the DPCM table
 void resetDPCM() {
-  for(byte i = 0; i < 240; i++)
+  for(u8 i = 0; i < 240; i++)
     dpcm[i] = 0;
 }
 
 //Synthesizes and mixed the 4 channels
-byte synth(long t) {
+u8 synth(long t) {
   //TODO: make compatible with DPCM
-  byte aout = ( a.waveform[ (t * a.freq) % 256 ] ) >> (a.volume + 2);   //the +2 is a division by 4, to mix the channels
-  byte bout = ( b.waveform[ (t * a.freq) % 256 ] ) >> (b.volume + 2); 
-  byte cout = ( c.waveform[ (t * a.freq) % 256 ] ) >> (c.volume + 2); 
-  byte dout = ( d.waveform[ (t * a.freq) % 256 ] ) >> (d.volume + 2);
+  u8 aout = ( a.waveform[ (t * a.freq) % 256 ] ) >> (a.volume + 2);   //the +2 is a division by 4, to mix the channels
+  u8 bout = ( b.waveform[ (t * a.freq) % 256 ] ) >> (b.volume + 2); 
+  u8 cout = ( c.waveform[ (t * a.freq) % 256 ] ) >> (c.volume + 2); 
+  u8 dout = ( d.waveform[ (t * a.freq) % 256 ] ) >> (d.volume + 2);
   
   return aout + bout + cout + dout;
 }
 
-inline void writeData(byte addr, byte data) {
+inline void writeData(u8 addr, u8 data) {
   if(addr < 0x10) // channel data
   {
     Channel* chan;
@@ -53,16 +50,16 @@ inline void writeData(byte addr, byte data) {
     
     //Write to register
     switch(addr % 3) {
-      case 0:  //low frequency byte
+      case 0:  //low frequency u8
       {
-        word high = chan->freq & 0xF0;
+        u16 high = chan->freq & 0xF0;
         chan->freq = high | data;
         break;
       }
         
-      case 1:  //high frequency byte
+      case 1:  //high frequency u8
       {
-        word low = chan->freq & 0x0F;
+        u16 low = chan->freq & 0x0F;
         chan->freq = low | data;
         break;
       }
@@ -73,7 +70,16 @@ inline void writeData(byte addr, byte data) {
         chan->volume = 31 - (data >> 3);
         
         //Waveform
-        chan->waveform = waveforms[data & 0x7];
+        switch(data & 0x7) {
+          case 0: chan->waveform = square50; break;
+          case 1: chan->waveform = square25; break;
+          case 2: chan->waveform = square12; break;
+          case 3: chan->waveform = triangle; break;
+          case 4: chan->waveform = sine; break;
+          case 5: chan->waveform = sawtooth; break;
+          case 6: chan->waveform = noise; break;
+          case 7: chan->waveform = dpcm; break;
+        }
         break;
       }
     }
