@@ -29,13 +29,20 @@ void resetDPCM() {
     dpcm[i] = 0;
 }
 
+//Inits the synth
+void init() {
+  a.freq = b.freq = c.freq = d.freq = 0;
+  a.waveform = b.waveform = c.waveform = d.waveform = square50;
+  a.volume = b.volume = c.volume = d.volume = 1;
+}
+
 //Synthesizes and mixed the 4 channels
 u8 synth(long t) {
   //TODO: make compatible with DPCM
-  u8 aout = ( a.waveform[ (t * a.freq) % 256 ] ) >> (a.volume + 2);   //the +2 is a division by 4, to mix the channels
-  u8 bout = ( b.waveform[ (t * a.freq) % 256 ] ) >> (b.volume + 2); 
-  u8 cout = ( c.waveform[ (t * a.freq) % 256 ] ) >> (c.volume + 2); 
-  u8 dout = ( d.waveform[ (t * a.freq) % 256 ] ) >> (d.volume + 2);
+  u8 aout = ( a.waveform[ (t * a.freq) % 256 ] / a.volume) >> 2;   //the "shift left 2" is a division by 4, to mix the channels
+  u8 bout = ( b.waveform[ (t * b.freq) % 256 ] / b.volume ) >> 2; 
+  u8 cout = ( c.waveform[ (t * c.freq) % 256 ] / c.volume ) >> 2; 
+  u8 dout = ( d.waveform[ (t * d.freq) % 256 ] / d.volume ) >> 2;
   
   return aout + bout + cout + dout;
 }
@@ -67,7 +74,7 @@ inline void writeData(u8 addr, u8 data) {
       case 2:  //flags
       {
         //Volume
-        chan->volume = 31 - (data >> 3);
+        chan->volume = 31 - (data >> 3) + 1;
         
         //Waveform
         switch(data & 0x7) {
